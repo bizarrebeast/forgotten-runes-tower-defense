@@ -16,7 +16,7 @@ export const GameSettings = {
     rows: 12,
     tileSize: 50,
     offsetX: 40,
-    offsetY: 80,
+    offsetY: 120, // Increased by 20px to add space above HUD
   },
 
   game: {

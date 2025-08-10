@@ -1,5 +1,6 @@
 import GameSettings from "../config/GameSettings"
 import { GridPosition } from "../systems/GridSystem"
+import { Item, ItemConfig } from "./Item"
 
 export interface EnemyConfig {
   health: number
@@ -122,6 +123,11 @@ export class Enemy {
     // Award gold (via event system)
     this.scene.events.emit('enemyDied', this.config.goldReward)
 
+    // Check for item drop (20% chance)
+    if (Math.random() < 0.2) {
+      this.dropItem()
+    }
+
     // Death effect
     const deathEffect = this.scene.add.circle(this.sprite.x, this.sprite.y, 20, 0xff0000, 0.7)
     this.scene.tweens.add({
@@ -134,6 +140,35 @@ export class Enemy {
     })
 
     this.destroy()
+  }
+
+  private dropItem(): void {
+    // Get all available item types
+    const availableItems = Item.getAllItemTypes()
+    
+    // Calculate weighted random selection based on drop chances
+    const totalWeight = availableItems.reduce((sum, item) => sum + item.dropChance, 0)
+    let randomValue = Math.random() * totalWeight
+    
+    let selectedItem: ItemConfig | null = null
+    for (const item of availableItems) {
+      randomValue -= item.dropChance
+      if (randomValue <= 0) {
+        selectedItem = item
+        break
+      }
+    }
+
+    if (selectedItem) {
+      // Create item at enemy position with slight randomness
+      const dropX = this.sprite.x + (Math.random() - 0.5) * 30
+      const dropY = this.sprite.y + (Math.random() - 0.5) * 30
+      
+      const droppedItem = new Item(this.scene, dropX, dropY, selectedItem)
+      
+      // Emit event so GameScene can track the item
+      this.scene.events.emit('itemDropped', droppedItem)
+    }
   }
 
   private reachedEnd(): void {

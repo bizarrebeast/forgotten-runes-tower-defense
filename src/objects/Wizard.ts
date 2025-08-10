@@ -17,6 +17,7 @@ export class Wizard {
   public gridRow: number
   private lastFireTime: number = 0
   private scene: Phaser.Scene
+  private itemEffects: Map<string, number> = new Map()
 
   constructor(scene: Phaser.Scene, x: number, y: number, col: number, row: number, config: WizardConfig) {
     this.scene = scene
@@ -38,12 +39,18 @@ export class Wizard {
     this.sprite.on('pointerdown', () => {
       this.showRange()
     })
+
+    // Listen for item effect updates
+    scene.events.on('itemEffectsUpdated', (effects: Map<string, number>) => {
+      this.updateItemEffects(effects)
+    })
   }
 
   public canFire(): boolean {
     const currentTime = this.scene.time.now
     const timeSinceLastFire = currentTime - this.lastFireTime
-    const fireInterval = 1000 / this.config.fireRate // Convert to milliseconds
+    const effectiveFireRate = this.getEffectiveFireRate()
+    const fireInterval = 1000 / effectiveFireRate // Convert to milliseconds
     return timeSinceLastFire >= fireInterval
   }
 
@@ -76,7 +83,7 @@ export class Wizard {
   }
 
   public canTarget(target: { x: number, y: number }): boolean {
-    return this.getDistanceTo(target) <= this.config.range
+    return this.getDistanceTo(target) <= this.getEffectiveRange()
   }
 
   public showRange(): void {
@@ -107,5 +114,29 @@ export class Wizard {
       color: 0x00FF00, // Green  
       name: "Alchemist"
     }
+  }
+
+  // Item effect methods
+  public updateItemEffects(effects: Map<string, number>): void {
+    this.itemEffects = new Map(effects)
+    
+    // Update range circle size based on new effective range
+    const effectiveRange = this.getEffectiveRange()
+    this.rangeCircle.setRadius(effectiveRange)
+  }
+
+  public getEffectiveDamage(): number {
+    const damageMultiplier = 1 + ((this.itemEffects.get('damageMultiplier') || 0) / 100)
+    return Math.floor(this.config.damage * damageMultiplier)
+  }
+
+  public getEffectiveRange(): number {
+    const rangeMultiplier = 1 + ((this.itemEffects.get('rangeMultiplier') || 0) / 100)
+    return Math.floor(this.config.range * rangeMultiplier)
+  }
+
+  public getEffectiveFireRate(): number {
+    const fireRateMultiplier = 1 + ((this.itemEffects.get('fireRateMultiplier') || 0) / 100)
+    return this.config.fireRate * fireRateMultiplier
   }
 }

@@ -1,14 +1,22 @@
 import GameSettings from "../config/GameSettings"
 import { GridSystem } from "../systems/GridSystem"
 import { GameState } from "../systems/GameState"
+import { ItemManager } from "../systems/ItemManager"
+import { WizardManager } from "../systems/WizardManager"
+import { TabManager } from "../systems/TabManager"
 import { Wizard } from "../objects/Wizard"
 import { Enemy } from "../objects/Enemy"
+import { Item } from "../objects/Item"
 
 export class GameScene extends Phaser.Scene {
   private gridSystem: GridSystem
   private gameState: GameState
+  private itemManager: ItemManager
+  private wizardManager: WizardManager
+  private tabManager: TabManager
   private wizards: Wizard[] = []
   private enemies: Enemy[] = []
+  private droppedItems: Item[] = []
   private gridGraphics: Phaser.GameObjects.Graphics
   
   // UI Elements
@@ -32,6 +40,9 @@ export class GameScene extends Phaser.Scene {
     // Initialize systems
     this.gridSystem = new GridSystem(this)
     this.gameState = new GameState(GameSettings.game.startingGold, GameSettings.game.startingLives)
+    this.itemManager = new ItemManager(this)
+    this.wizardManager = new WizardManager(this)
+    this.tabManager = new TabManager(this)
     
     // Store wave in registry for enemy scaling
     this.registry.set('wave', this.gameState.wave)
@@ -39,9 +50,9 @@ export class GameScene extends Phaser.Scene {
     // Create layered background
     this.add.rectangle(GameSettings.canvas.width / 2, GameSettings.canvas.height / 2, GameSettings.canvas.width, GameSettings.canvas.height, 0x1a252f)
     
-    // Add subtle game area background
-    const gameAreaY = (GameSettings.grid.offsetY + (GameSettings.grid.rows * GameSettings.grid.tileSize) / 2)
-    const gameAreaHeight = GameSettings.grid.rows * GameSettings.grid.tileSize + 20
+    // Add subtle game area background - positioned exactly around the game board
+    const gameAreaY = GameSettings.grid.offsetY + (GameSettings.grid.rows * GameSettings.grid.tileSize) / 2
+    const gameAreaHeight = GameSettings.grid.rows * GameSettings.grid.tileSize
     this.add.rectangle(GameSettings.canvas.width / 2, gameAreaY, GameSettings.canvas.width - 30, gameAreaHeight, 0x2c3e50, 0.3)
     
     // Create grid graphics
@@ -50,6 +61,9 @@ export class GameScene extends Phaser.Scene {
 
     // Set up UI
     this.createUI()
+    
+    // Set up tabs
+    this.setupTabs()
     
     // Set up input handling
     this.setupInputHandlers()
@@ -61,39 +75,42 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createUI(): void {
-    // Top Status Bar - moved up and better aligned
-    const topPanel = this.add.rectangle(GameSettings.canvas.width / 2, 25, GameSettings.canvas.width - 20, 40, 0x2c2c2c, 0.9)
+    // Center HUD between top of screen and game board
+    const hudHeight = 60
+    const gameStartY = GameSettings.grid.offsetY
+    const hudY = (gameStartY - hudHeight) / 2 // Center between top and game board
+    const topPanel = this.add.rectangle(GameSettings.canvas.width / 2, hudY + hudHeight / 2, GameSettings.canvas.width - 20, hudHeight, 0x2c2c2c, 0.9)
     topPanel.setStrokeStyle(2, 0x555555)
     
-    // Left side - Resources (aligned with other HUD items)
-    this.goldText = this.add.text(25, 13, `Gold: ${this.gameState.gold}`, {
-      fontSize: '14px',
+    // Left side - Resources with more spacing
+    this.goldText = this.add.text(30, hudY + 15, `Gold: ${this.gameState.gold}`, {
+      fontSize: '16px',
       color: '#ffd700',
       fontFamily: 'Arial',
       fontStyle: 'bold'
     })
     
-    this.livesText = this.add.text(25, 28, `Lives: ${this.gameState.lives}`, {
-      fontSize: '14px', 
+    this.livesText = this.add.text(30, hudY + 35, `Lives: ${this.gameState.lives}`, {
+      fontSize: '16px', 
       color: '#ff6b6b',
       fontFamily: 'Arial',
       fontStyle: 'bold'
     })
 
-    // Center - Wave info (properly centered)
-    this.waveText = this.add.text(GameSettings.canvas.width / 2, 25, `Wave: ${this.gameState.wave}`, {
-      fontSize: '16px',
+    // Center - Wave info with larger font
+    this.waveText = this.add.text(GameSettings.canvas.width / 2, hudY + hudHeight / 2, `Wave: ${this.gameState.wave}`, {
+      fontSize: '20px',
       color: '#4ecdc4',
       fontFamily: 'Arial',
       fontStyle: 'bold'
     }).setOrigin(0.5)
 
-    // Right side - Start Wave button (properly aligned)
-    this.startWaveButton = this.add.text(GameSettings.canvas.width - 25, 25, 'Start\nWave', {
-      fontSize: '12px',
+    // Right side - Start Wave button with better positioning
+    this.startWaveButton = this.add.text(GameSettings.canvas.width - 30, hudY + hudHeight / 2, 'Start\nWave', {
+      fontSize: '14px',
       color: '#ffffff',
       backgroundColor: '#27ae60',
-      padding: { x: 8, y: 4 },
+      padding: { x: 12, y: 8 },
       fontFamily: 'Arial',
       align: 'center',
       fontStyle: 'bold'
@@ -104,71 +121,31 @@ export class GameScene extends Phaser.Scene {
         this.startWave()
       }
     })
+  }
 
-    // Bottom Wizard Selection Panel - moved up to avoid overlap
-    const bottomY = GameSettings.canvas.height - 60
-    const bottomPanel = this.add.rectangle(GameSettings.canvas.width / 2, bottomY, GameSettings.canvas.width - 20, 80, 0x2c2c2c, 0.9)
-    bottomPanel.setStrokeStyle(2, 0x555555)
-    
-    // Add section title
-    this.add.text(GameSettings.canvas.width / 2, bottomY - 30, 'Select Wizard', {
-      fontSize: '12px',
-      color: '#ffffff',
-      fontFamily: 'Arial',
-      fontStyle: 'bold'
-    }).setOrigin(0.5)
-
-    // Battle Mage button - cleaner design
-    this.battleMageBtn = this.add.text(GameSettings.canvas.width / 4, bottomY, 'Battle Mage\n50 Gold', {
-      fontSize: '13px',
-      color: '#ffffff',
-      backgroundColor: '#8e44ad',
-      padding: { x: 16, y: 10 },
-      fontFamily: 'Arial',
-      align: 'center',
-      fontStyle: 'bold'
-    }).setOrigin(0.5).setInteractive()
-
-    this.battleMageBtn.on('pointerdown', () => {
-      this.selectWizardType('battleMage')
+  private setupTabs(): void {
+    // Add Wizards tab
+    this.tabManager.addTab({
+      id: 'wizards',
+      title: 'Wizards',
+      color: 0x8e44ad,
+      content: this.wizardManager.getWizardContent()
     })
 
-    // Alchemist button - cleaner design  
-    this.alchemistBtn = this.add.text((GameSettings.canvas.width / 4) * 3, bottomY, 'Alchemist\n75 Gold', {
-      fontSize: '13px',
-      color: '#ffffff',
-      backgroundColor: '#27ae60',
-      padding: { x: 16, y: 10 },
-      fontFamily: 'Arial',
-      align: 'center',
-      fontStyle: 'bold'
-    }).setOrigin(0.5).setInteractive()
-
-    this.alchemistBtn.on('pointerdown', () => {
-      this.selectWizardType('alchemist')
+    // Add Items tab
+    this.tabManager.addTab({
+      id: 'items', 
+      title: 'Items',
+      color: 0x34495e,
+      content: this.itemManager.getInventoryContent()
     })
   }
 
-  private selectedWizardType: string | null = null
-  private battleMageBtn: Phaser.GameObjects.Text
-  private alchemistBtn: Phaser.GameObjects.Text
-
-  private selectWizardType(type: string): void {
-    this.selectedWizardType = type
-    
-    // Update button appearance for selected state
-    if (type === 'battleMage') {
-      this.battleMageBtn.setBackgroundColor('#e74c3c') // Bright red when selected
-      this.alchemistBtn.setBackgroundColor('#27ae60')   // Normal green
-    } else if (type === 'alchemist') {
-      this.battleMageBtn.setBackgroundColor('#8e44ad')   // Normal purple
-      this.alchemistBtn.setBackgroundColor('#e74c3c')    // Bright red when selected  
-    }
-  }
 
   private setupInputHandlers(): void {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (this.selectedWizardType && this.gameState.gold > 0) {
+      const selectedType = this.wizardManager.getSelectedWizardType()
+      if (selectedType && this.gameState.gold > 0) {
         this.tryPlaceWizard(pointer.x, pointer.y)
       }
     })
@@ -176,12 +153,13 @@ export class GameScene extends Phaser.Scene {
 
   private tryPlaceWizard(x: number, y: number): void {
     const gridPos = this.gridSystem.worldToGrid(x, y)
+    const selectedType = this.wizardManager.getSelectedWizardType()
     
-    if (this.gridSystem.canPlaceWizard(gridPos.col, gridPos.row)) {
+    if (this.gridSystem.canPlaceWizard(gridPos.col, gridPos.row) && selectedType) {
       let config
       let cost = 0
 
-      switch(this.selectedWizardType) {
+      switch(selectedType) {
         case 'battleMage':
           config = Wizard.getBattleMageConfig()
           cost = config.cost
@@ -200,10 +178,8 @@ export class GameScene extends Phaser.Scene {
         this.wizards.push(wizard)
         this.gridSystem.placeWizard(gridPos.col, gridPos.row)
         
-        // Clear selection and reset button colors
-        this.selectedWizardType = null
-        this.battleMageBtn.setBackgroundColor('#8e44ad')
-        this.alchemistBtn.setBackgroundColor('#27ae60')
+        // Clear selection
+        this.wizardManager.clearSelection()
       }
     }
   }
@@ -211,7 +187,9 @@ export class GameScene extends Phaser.Scene {
   private setupEventListeners(): void {
     // Listen for enemy death
     this.events.on('enemyDied', (goldReward: number) => {
-      this.gameState.addGold(goldReward)
+      // Apply gold bonus from items
+      const effectiveGold = Math.floor(goldReward * this.itemManager.getGoldMultiplier())
+      this.gameState.addGold(effectiveGold)
     })
 
     // Listen for enemy reaching end
@@ -220,6 +198,23 @@ export class GameScene extends Phaser.Scene {
       if (this.gameState.gameOver) {
         this.gameOver()
       }
+    })
+
+    // Listen for item drops
+    this.events.on('itemDropped', (item: Item) => {
+      this.droppedItems.push(item)
+    })
+
+    // Listen for item pickups
+    this.events.on('itemPickedUp', (itemConfig: any) => {
+      this.itemManager.addItem(itemConfig)
+      // Remove from dropped items array
+      this.droppedItems = this.droppedItems.filter(item => !item.isPickedUp)
+    })
+
+    // Listen for wizard type selection
+    this.events.on('wizardTypeSelected', (type: string) => {
+      console.log('Wizard type selected:', type)
     })
 
     // Listen for game state changes
@@ -326,7 +321,8 @@ export class GameScene extends Phaser.Scene {
           // Apply damage after a short delay (projectile travel time)
           this.time.delayedCall(200, () => {
             if (closestEnemy && closestEnemy.isAlive) {
-              closestEnemy.takeDamage(wizard.config.damage)
+              const effectiveDamage = wizard.getEffectiveDamage()
+              closestEnemy.takeDamage(effectiveDamage)
             }
           })
         }
@@ -377,20 +373,29 @@ export class GameScene extends Phaser.Scene {
     })
     this.enemies = []
 
+    // Clean up all dropped items
+    this.droppedItems.forEach(item => {
+      if (item && item.destroy) {
+        item.destroy()
+      }
+    })
+    this.droppedItems = []
+
+    // Reset managers
+    if (this.itemManager) {
+      this.itemManager.reset()
+    }
+    if (this.wizardManager) {
+      this.wizardManager.clearSelection()
+    }
+
     // Reset grid system
     if (this.gridSystem) {
       this.gridSystem.reset()
       this.gridSystem.drawGrid(this.gridGraphics)
     }
 
-    // Clear wizard selection state
-    this.selectedWizardType = null
-    if (this.battleMageBtn) {
-      this.battleMageBtn.setBackgroundColor('#8e44ad')
-    }
-    if (this.alchemistBtn) {
-      this.alchemistBtn.setBackgroundColor('#27ae60')
-    }
+    // Clear wizard selection state handled by wizardManager.clearSelection() above
 
     // Clear any pending timers/tweens
     this.time.removeAllEvents()
