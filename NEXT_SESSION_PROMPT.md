@@ -1,88 +1,118 @@
-# Forgotten Runes Tower Defense - Next Session Prompt
+# Next Session Prompt for Forgotten Runes Tower Defense
 
-## 🎮 Current Status
-**Repository:** https://github.com/bizarrebeast/forgotten-runes-tower-defense  
-**Local Path:** `/Users/dylan/forgotten-runes-tower-defense/`  
-**Development Phase:** Phase 1 Complete - Ready for Phase 2  
-**Last Session:** August 10, 2025
+## Current Status
+✅ **Phase 1 Complete**: Core gameplay with 2 wizard types
+✅ **Phase 2 Complete**: Wizard Expansion with 6 total wizard types
 
-## ✅ What We've Accomplished (Phase 1 Complete)
-- **Fully playable tower defense prototype** with polished UI/UX
-- **2 wizard types:** Battle Mage (50 gold) and Alchemist (75 gold) 
-- **2 enemy types:** Goblins and Shadow Demons with wave scaling
-- **Tabbed interface:** Wizards and Items tabs with smooth animations
-- **Item system foundation:** Inventory slots, effects system, drop mechanics
-- **Clean architecture:** Separated managers (ItemManager, WizardManager, TabManager)
-- **Mobile-responsive design** ready for Farcade deployment
-- **Professional UI:** Centered HUD, proper spacing, connected tab menus
+### Completed Features:
+- Grid-based tower placement system
+- Wave spawning with 2 enemy types (Goblin, Shadow Demon)
+- Currency and lives system
+- Basic projectile combat
+- Enemy pathfinding along defined routes
+- Item drop and inventory system
+- Tab-based UI for Wizards and Items
+- **6 wizard types with wave-based unlocking:**
+  - Battle Mage (Wave 1)
+  - Alchemist (Wave 1)
+  - Enchanter (Wave 10) - Buffs nearby wizards
+  - Necromancer (Wave 25) - Summons skeleton warriors
+  - Elementalist (Wave 50) - Cycles damage types
+  - Diviner (Wave 75) - Sees invisible, bonus vs bosses
+- Horizontal scrollable wizard selection menu
+- Persistent wizard selection
+- Fixed event propagation for proper UI interaction
+- Unlock notifications for new wizards
 
-## 🎯 Next Session Goals (Phase 2: Content & Progression)
+## Next Goal: Phase 3 - Enemy Variety & Boss Battles
 
-### Priority 1: Wizard Expansion
-- Add 4 remaining wizard types:
-  - **Enchanter** (Wave 10 unlock) - Buffs nearby wizards
-  - **Necromancer** (Wave 25 unlock) - Summons skeleton allies
-  - **Elementalist** (Wave 50 unlock) - Fire/ice/lightning rotation
-  - **Diviner** (Wave 75 unlock) - Long-range piercing attacks
-- Implement 3-level upgrade system with visual changes
-- Add click-to-upgrade existing wizards functionality
+### New Enemies to Add:
+1. **Orc Warrior** (Starts Wave 5)
+   - High HP, medium speed
+   - Takes reduced damage from physical attacks
+   
+2. **Dark Elf Assassin** (Starts Wave 15)
+   - Low HP, very fast
+   - Periodically goes invisible for 2 seconds
+   
+3. **Stone Golem** (Starts Wave 30)
+   - Very high HP, very slow
+   - Immune to slow effects
+   
+4. **Wraith** (Starts Wave 40)
+   - Medium HP, floats over path
+   - Takes reduced damage from non-magical attacks
 
-### Priority 2: Item System Enhancement  
-- Implement actual item drops from enemies (30% regular, 100% boss)
-- Add 8-10 item types with meaningful effects
-- Create item rarity system (Common/Rare/Epic)
-- Add click-to-use active items with targeting
+### Boss Enemies (Every 10 waves):
+1. **Wave 10: Goblin King**
+   - Spawns goblin minions when damaged
+   
+2. **Wave 20: Shadow Lord**
+   - Creates shadow clones at 50% health
+   
+3. **Wave 30: Ancient Golem**
+   - Gains armor stacks, requires multiple hits to damage
+   
+4. **Wave 40: Lich King**
+   - Resurrects fallen enemies as skeletons
 
-### Priority 3: Meta-Progression
-- Arcane Points earning based on wave reached
-- Skill tree with 3 branches (Economic, Power, Survival)
-- Persistent save system for meta-progression
-- Statistics tracking (games played, total waves survived)
+### Implementation Steps:
+1. Create new enemy configurations in `GameSettings.ts`
+2. Add enemy type methods in `Enemy.ts`
+3. Implement special enemy abilities (invisibility, armor, etc.)
+4. Create boss spawn system in `GameScene.ts`
+5. Add visual effects for special abilities
+6. Balance health/speed/rewards for each enemy type
 
-## 🚀 How to Resume Development
-
-### Quick Start Commands:
-```bash
-cd /Users/dylan/forgotten-runes-tower-defense
-npm run dev
-# Game runs at http://localhost:3000
+## Project Structure
+```
+src/
+├── config/
+│   └── GameSettings.ts      # Game configuration and balance
+├── objects/
+│   ├── Wizard.ts            # Wizard tower class (6 types)
+│   ├── Enemy.ts             # Enemy class with types
+│   └── Item.ts              # Item drops and effects
+├── scenes/
+│   ├── GameScene.ts         # Main game scene
+│   └── MainMenu.ts          # Menu scene
+├── systems/
+│   ├── GridSystem.ts        # Grid placement logic
+│   ├── GameState.ts         # Game state management
+│   ├── WizardManager.ts     # Wizard selection UI (horizontal cards)
+│   ├── ItemManager.ts       # Inventory system
+│   └── TabManager.ts        # Tab UI system
+└── main.ts                  # Phaser game initialization
 ```
 
-### Current Game Features to Test:
-1. Place Battle Mages and Alchemists on the 8×12 grid
-2. Start waves to spawn goblins and shadow demons
-3. Test tabbed interface (Wizards/Items tabs)
-4. Observe enemy scaling and wave progression
-5. Check item system foundation (inventory slots visible)
+## Tech Stack
+- **Phaser 3.86.0** - Game framework
+- **TypeScript** - Type-safe development
+- **Vite** - Build tool and dev server
 
-### Files to Focus On:
-- `src/objects/Wizard.ts` - Add new wizard types here
-- `src/systems/ItemManager.ts` - Expand item functionality  
-- `src/config/GameSettings.ts` - Add new wizard/item configurations
-- `GAMEPLAN.md` - Detailed roadmap with all specifications
+## Recent Improvements (Phase 2)
+- Added 4 new wizard types with unique abilities
+- Implemented wave-based unlock system
+- Redesigned wizard menu with horizontal card layout
+- Fixed event propagation for proper card selection
+- Added persistent wizard selection
+- Positioned wizard menu above tabs
+- Added scroll arrows for wizard card navigation
+- Show unlock notifications for new wizards
 
-### Key Architecture:
-- **GameScene.ts** - Main game orchestration
-- **GridSystem.ts** - Wizard placement logic
-- **TabManager.ts** - UI tab system with animations
-- **GameState.ts** - Lives, gold, wave management
+## Development Commands
+```bash
+npm run dev     # Start development server
+npm run build   # Build for production
+npm run preview # Preview production build
+```
 
-## 📋 Development Session Checklist
-- [ ] Run `npm run dev` to start development server
-- [ ] Review current gameplay and UI state
-- [ ] Check GAMEPLAN.md for detailed specifications
-- [ ] Choose Priority 1, 2, or 3 based on goals
-- [ ] Implement features incrementally 
-- [ ] Test thoroughly on mobile/desktop
-- [ ] Commit progress with descriptive messages
-- [ ] Update GAMEPLAN.md progress markers
+## GitHub Repository
+https://github.com/bizarrebeast/forgotten-runes-tower-defense
 
-## 🎨 Game Design Notes
-- **Theme:** Authentic Forgotten Runes Wizard's Cult universe
-- **Target:** Mobile-first with Farcade deployment
-- **Difficulty:** Endless waves with exponential scaling
-- **Engagement:** 10-20 minute sessions, meta-progression for retention
-- **Art Style:** Pixel art matching Forgotten Runes NFT aesthetic
-
----
-*Game is production-ready for Phase 2 development. All Phase 1 features are polished and functional.*
+## Current Game Balance
+- 6 wizard types with progressive costs/power
+- Wave difficulty scales appropriately
+- Economy balanced for wizard progression
+- UI/UX polished with smooth interactions
+- Performance optimized for many units
