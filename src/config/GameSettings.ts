@@ -30,12 +30,50 @@ export const GameSettings = {
       damage: 20,
       range: 120,
       fireRate: 1.0, // attacks per second
+      unlockWave: 1,
     },
     alchemist: {
       cost: 75,
       damage: 15,
       range: 100,
       fireRate: 0.8,
+      unlockWave: 1,
+    },
+    enchanter: {
+      cost: 100,
+      damage: 8, // Low direct damage
+      range: 90,
+      fireRate: 0.6,
+      unlockWave: 10,
+      buffRange: 150, // Range to buff other wizards
+      buffMultiplier: 1.3, // 30% damage boost
+    },
+    necromancer: {
+      cost: 125,
+      damage: 12,
+      range: 110,
+      fireRate: 0.7,
+      unlockWave: 25,
+      summonCooldown: 8000, // 8 seconds between summons
+      skeletonHealth: 80,
+    },
+    elementalist: {
+      cost: 150,
+      damage: 25, // High damage but cycles elements
+      range: 130,
+      fireRate: 0.9,
+      unlockWave: 50,
+      elementCycle: ['fire', 'ice', 'lightning'], // Rotates through elements
+      aoeRange: 60, // Area of effect range
+    },
+    diviner: {
+      cost: 200,
+      damage: 35, // Highest single-target damage
+      range: 200, // Longest range
+      fireRate: 0.5, // Slowest but powerful
+      unlockWave: 75,
+      pierceCount: 3, // Hits up to 3 enemies in line
+      bossBonus: 2.0, // Double damage vs bosses
     }
   },
 

@@ -8,13 +8,15 @@ export class GameState {
   private goldChangeCallbacks: ((gold: number) => void)[] = []
   private livesChangeCallbacks: ((lives: number) => void)[] = []
   private waveChangeCallbacks: ((wave: number) => void)[] = []
+  private scene: Phaser.Scene | null = null
 
-  constructor(startingGold: number, startingLives: number) {
+  constructor(startingGold: number, startingLives: number, scene?: Phaser.Scene) {
     this.gold = startingGold
     this.lives = startingLives
     this.wave = 1
     this.waveInProgress = false
     this.gameOver = false
+    this.scene = scene || null
   }
 
   public addGold(amount: number): void {
@@ -72,5 +74,9 @@ export class GameState {
 
   private notifyWaveChange(): void {
     this.waveChangeCallbacks.forEach(callback => callback(this.wave))
+    // Also emit scene event for systems that need it
+    if (this.scene) {
+      this.scene.events.emit('waveChanged', this.wave)
+    }
   }
 }

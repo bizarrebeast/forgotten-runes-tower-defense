@@ -39,7 +39,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     // Initialize systems
     this.gridSystem = new GridSystem(this)
-    this.gameState = new GameState(GameSettings.game.startingGold, GameSettings.game.startingLives)
+    this.gameState = new GameState(GameSettings.game.startingGold, GameSettings.game.startingLives, this)
     this.itemManager = new ItemManager(this)
     this.wizardManager = new WizardManager(this)
     this.tabManager = new TabManager(this)
@@ -124,12 +124,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupTabs(): void {
-    // Add Wizards tab
+    // Create empty container for Wizards tab since wizard menu is now independent
+    const emptyWizardContent = this.add.container(0, 0)
+    
+    // Add Wizards tab  
     this.tabManager.addTab({
       id: 'wizards',
       title: 'Wizards',
       color: 0x8e44ad,
-      content: this.wizardManager.getWizardContent()
+      content: emptyWizardContent
     })
 
     // Add Items tab
@@ -156,30 +159,21 @@ export class GameScene extends Phaser.Scene {
     const selectedType = this.wizardManager.getSelectedWizardType()
     
     if (this.gridSystem.canPlaceWizard(gridPos.col, gridPos.row) && selectedType) {
-      let config
-      let cost = 0
-
-      switch(selectedType) {
-        case 'battleMage':
-          config = Wizard.getBattleMageConfig()
-          cost = config.cost
-          break
-        case 'alchemist':
-          config = Wizard.getAlchemistConfig()
-          cost = config.cost
-          break
-        default:
-          return
+      // Check if wizard type is unlocked
+      if (!this.wizardManager.isWizardUnlocked(selectedType)) {
+        return
       }
 
-      if (this.gameState.spendGold(cost)) {
+      const config = this.wizardManager.getWizardConfig(selectedType)
+      if (!config) return
+
+      if (this.gameState.spendGold(config.cost)) {
         const worldPos = this.gridSystem.gridToWorld(gridPos.col, gridPos.row)
         const wizard = new Wizard(this, worldPos.x, worldPos.y, gridPos.col, gridPos.row, config)
         this.wizards.push(wizard)
         this.gridSystem.placeWizard(gridPos.col, gridPos.row)
         
-        // Clear selection
-        this.wizardManager.clearSelection()
+        // Keep selection active - don't clear it automatically
       }
     }
   }
@@ -215,6 +209,23 @@ export class GameScene extends Phaser.Scene {
     // Listen for wizard type selection
     this.events.on('wizardTypeSelected', (type: string) => {
       console.log('Wizard type selected:', type)
+    })
+
+    // Listen for tab events to show/hide wizard menu
+    this.events.on('tabOpened', (tabId: string) => {
+      if (tabId === 'wizards') {
+        this.wizardManager.showMenu()
+      } else {
+        this.wizardManager.hideMenu()
+        this.wizardManager.clearSelection() // Clear selection when switching away from wizards tab
+      }
+    })
+
+    this.events.on('tabClosed', (tabId: string) => {
+      if (tabId === 'wizards') {
+        this.wizardManager.hideMenu()
+        this.wizardManager.clearSelection() // Clear selection when wizard menu is closed
+      }
     })
 
     // Listen for game state changes

@@ -7,6 +7,16 @@ export interface WizardConfig {
   fireRate: number
   color: number
   name: string
+  unlockWave: number
+  // Optional special properties
+  buffRange?: number
+  buffMultiplier?: number
+  summonCooldown?: number
+  skeletonHealth?: number
+  elementCycle?: string[]
+  aoeRange?: number
+  pierceCount?: number
+  bossBonus?: number
 }
 
 export class Wizard {
@@ -113,6 +123,38 @@ export class Wizard {
       ...GameSettings.wizards.alchemist,
       color: 0x00FF00, // Green  
       name: "Alchemist"
+    }
+  }
+
+  public static getEnchanterConfig(): WizardConfig {
+    return {
+      ...GameSettings.wizards.enchanter,
+      color: 0x9932CC, // Dark Orchid
+      name: "Enchanter"
+    }
+  }
+
+  public static getNecromancerConfig(): WizardConfig {
+    return {
+      ...GameSettings.wizards.necromancer,
+      color: 0x2F4F4F, // Dark Slate Gray
+      name: "Necromancer"
+    }
+  }
+
+  public static getElementalistConfig(): WizardConfig {
+    return {
+      ...GameSettings.wizards.elementalist,
+      color: 0xFF4500, // Orange Red
+      name: "Elementalist"
+    }
+  }
+
+  public static getDivinerConfig(): WizardConfig {
+    return {
+      ...GameSettings.wizards.diviner,
+      color: 0x4169E1, // Royal Blue
+      name: "Diviner"
     }
   }
 

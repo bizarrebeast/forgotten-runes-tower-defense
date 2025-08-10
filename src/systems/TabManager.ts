@@ -94,10 +94,12 @@ export class TabManager {
       if (this.activeTabId === config.id && this.isExpanded) {
         // Clicking active tab collapses it
         this.collapse()
+        this.scene.events.emit('tabClosed', config.id)
       } else {
         // Switch to this tab and expand
         this.setActiveTab(config.id)
         this.expand()
+        this.scene.events.emit('tabOpened', config.id)
       }
     })
     
